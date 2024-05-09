@@ -1,8 +1,12 @@
 package main
 
 import (
+	"encoding/json"
+	"http/standarlibary/models"
 	"net/http"
 	"regexp"
+
+	"github.com/gosimple/slug"
 )
 
 var (
@@ -19,7 +23,23 @@ func main() {
 	http.ListenAndServe(":8080", mux)
 }
 
-type CarsHandler struct{}
+type carStore interface {
+	Add(name string, car models.Car) error
+	Get(name string) (models.Car, error)
+	Update(name string, car models.Car) error
+	List() (map[string]models.Car, error)
+	Remove(name string) error
+}
+
+type CarsHandler struct{
+	store carStore
+}
+
+func newCarsHandler (c carStore) *CarsHandler {
+	return &CarsHandler {
+		store: c,
+	}
+}
 
 func (c *CarsHandler) ServeHTTP(w http.ResponseWriter, r *http.Request){
 	switch{
@@ -43,25 +63,116 @@ func (c *CarsHandler) ServeHTTP(w http.ResponseWriter, r *http.Request){
 	}
 }
 
-
 type homeHandler struct{}
 
 func (h *homeHandler) ServeHTTP(w http.ResponseWriter, r *http.Request){
 	w.Write([]byte("This is my home page"))
 }
 
-func (c *CarsHandler) CreateCar(w http.ResponseWriter, r *http.Request){
-	w.Write([]byte("This is my create car Endpoint"))
+func (h *CarsHandler) CreateCar(w http.ResponseWriter, r *http.Request){
+	var car models.Car
+	
+	if err := json.NewDecoder(r.Body).Decode(&car); err!=nil{
+		InternalServerErrorHandler(w,r)
+		return
+	}
+
+	ID := car.Model+"-"+string(car.Year)
+	resourceID := slug.Make(ID)
+	if err := h.store.Add(resourceID,car); err != nil{
+		InternalServerErrorHandler(w,r)
+		return
+	}
+	w.WriteHeader(http.StatusOK)
 }
-func (c *CarsHandler) ListCar(w http.ResponseWriter, r *http.Request){
-	w.Write([]byte("This is my list car Endpoint"))
+
+func (h *CarsHandler) ListCar(w http.ResponseWriter, r *http.Request){
+	resources, err := h.store.List()
+	if err != nil {
+		InternalServerErrorHandler(w,r)
+		return
+	}
+	
+	json, err := json.Marshal(resources)
+	if err != nil {
+		InternalServerErrorHandler(w,r)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	w.Write(json)
 }
-func (c *CarsHandler) GetCar(w http.ResponseWriter, r *http.Request){
-	w.Write([]byte("This is my get car Endpoint"))
+
+func (h *CarsHandler) GetCar(w http.ResponseWriter, r *http.Request){
+	matches := CarRgxID.FindStringSubmatch(r.URL.Path)
+	if len(matches) < 2 {
+		InternalServerErrorHandler(w,r)
+		return
+	}
+
+	car, err := h.store.Get(matches[1])
+	if err != nil {
+		if err == models.NotFoundErr{
+			NotFoundHandler(w,r)
+			return
+		}
+		InternalServerErrorHandler(w,r)
+		return
+	}
+
+	json, err := json.Marshal(car)
+	if err != nil {
+		InternalServerErrorHandler(w,r)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	w.Write(json)
 }
-func (c *CarsHandler) UpdateCar(w http.ResponseWriter, r *http.Request){
-	w.Write([]byte("This is my upadate car Endpoint"))
+func (h *CarsHandler) UpdateCar(w http.ResponseWriter, r *http.Request){
+	matches := CarRgxID.FindStringSubmatch(r.URL.Path)
+	if len(matches) < 2 {
+		InternalServerErrorHandler(w,r)
+		return
+	}
+
+	var car models.Car
+	if err := json.NewDecoder(r.Body).Decode(&car); err != nil{
+		InternalServerErrorHandler(w,r)
+		return
+	}
+	
+	if err := h.store.Update(matches[1],car); err != nil {
+		if err == models.NotFoundErr{
+			NotFoundHandler(w,r)
+			return
+		}
+		InternalServerErrorHandler(w,r)
+		return
+	}
+	w.WriteHeader(http.StatusOK)
 }
-func (c *CarsHandler) DeleteCar(w http.ResponseWriter, r *http.Request){
-	w.Write([]byte("This is my delete car Endpoint"))
+func (h *CarsHandler) DeleteCar(w http.ResponseWriter, r *http.Request){
+	matches := CarRgxID.FindStringSubmatch(r.URL.Path)
+	if len(matches) < 2 {
+		InternalServerErrorHandler(w,r)
+		return
+	}
+
+	if err := h.store.Remove(matches[1]); err != nil {
+		InternalServerErrorHandler(w,r)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+}
+
+func InternalServerErrorHandler(w http.ResponseWriter, r *http.Request){
+	w.WriteHeader(http.StatusInternalServerError)
+	w.Write([]byte("500 Internal Server Error"))
+}
+
+func NotFoundHandler(w http.ResponseWriter, r *http.Request){
+	w.WriteHeader(http.StatusNotFound)
+	w.Write([]byte("404 Not Found"))
 }
