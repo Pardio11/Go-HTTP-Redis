@@ -2,7 +2,9 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
 	"http/standarlibary/models"
+	"log"
 	"net/http"
 	"regexp"
 
@@ -10,16 +12,21 @@ import (
 )
 
 var (
-	CarRgx = regexp.MustCompile(`^/recipes/*$`)
-	CarRgxID = regexp.MustCompile(`^/recipes/([a-z0-9]+(?:-[a-z0-9]+)+)$`)
+	CarRgx = regexp.MustCompile(`^/cars/*$`)
+	CarRgxID = regexp.MustCompile(`^/cars/([a-zA-Z0-9]+(?:-[0-9]+))$`)
 )
 
 func main() {
+	store := models.NewRedisHandler()
+	carsHandler := newCarsHandler(store)
+	if store == nil{
+		log.Fatalf("ERROR:\nCan't connect to Redis\n")
+	}
 	mux := http.NewServeMux()
 
 	mux.Handle("/", &homeHandler{})
-	mux.Handle("/cars", &CarsHandler{})
-	mux.Handle("/cars/", &CarsHandler{})
+	mux.Handle("/cars", carsHandler)
+	mux.Handle("/cars/", carsHandler)
 	http.ListenAndServe(":8080", mux)
 }
 
@@ -59,6 +66,7 @@ func (c *CarsHandler) ServeHTTP(w http.ResponseWriter, r *http.Request){
 			c.DeleteCar(w,r)
 			return
 		default:
+			NotFoundHandler(w,r)
 			return
 	}
 }
@@ -66,24 +74,28 @@ func (c *CarsHandler) ServeHTTP(w http.ResponseWriter, r *http.Request){
 type homeHandler struct{}
 
 func (h *homeHandler) ServeHTTP(w http.ResponseWriter, r *http.Request){
+	fmt.Println("Home")
 	w.Write([]byte("This is my home page"))
 }
 
 func (h *CarsHandler) CreateCar(w http.ResponseWriter, r *http.Request){
 	var car models.Car
-	
+
 	if err := json.NewDecoder(r.Body).Decode(&car); err!=nil{
+		fmt.Println(car)
 		InternalServerErrorHandler(w,r)
 		return
 	}
 
-	ID := car.Model+"-"+string(car.Year)
+	ID := car.Model+"-"+fmt.Sprint(car.Year)
+	fmt.Printf("ID: %v\n",ID)
 	resourceID := slug.Make(ID)
 	if err := h.store.Add(resourceID,car); err != nil{
 		InternalServerErrorHandler(w,r)
 		return
 	}
 	w.WriteHeader(http.StatusOK)
+	w.Write([]byte(`{"key": "`+resourceID+`"}`))
 }
 
 func (h *CarsHandler) ListCar(w http.ResponseWriter, r *http.Request){
@@ -112,7 +124,7 @@ func (h *CarsHandler) GetCar(w http.ResponseWriter, r *http.Request){
 
 	car, err := h.store.Get(matches[1])
 	if err != nil {
-		if err == models.NotFoundErr{
+		if err == models.ErrNotFound{
 			NotFoundHandler(w,r)
 			return
 		}
@@ -143,7 +155,7 @@ func (h *CarsHandler) UpdateCar(w http.ResponseWriter, r *http.Request){
 	}
 	
 	if err := h.store.Update(matches[1],car); err != nil {
-		if err == models.NotFoundErr{
+		if err == models.ErrNotFound{
 			NotFoundHandler(w,r)
 			return
 		}
@@ -160,6 +172,10 @@ func (h *CarsHandler) DeleteCar(w http.ResponseWriter, r *http.Request){
 	}
 
 	if err := h.store.Remove(matches[1]); err != nil {
+		if err == models.ErrNotFound{
+			NotFoundHandler(w,r)
+			return
+		}
 		InternalServerErrorHandler(w,r)
 		return
 	}
