@@ -163,6 +163,7 @@ func (h *CarsHandler) UpdateCar(w http.ResponseWriter, r *http.Request){
 		return
 	}
 	w.WriteHeader(http.StatusOK)
+	w.Write([]byte(`{"key": "`+matches[1]+`"}`))
 }
 func (h *CarsHandler) DeleteCar(w http.ResponseWriter, r *http.Request){
 	matches := CarRgxID.FindStringSubmatch(r.URL.Path)

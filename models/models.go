@@ -76,7 +76,10 @@ func (rh redisHandler) Get(key string) (Car, error){
 	return c,nil
 }
 func (rh redisHandler) Update(key string, car Car) error{
-	return rh.Add(key, car)
+	if rh.client.Exists(context.Background(),key).Val()==1{
+		return rh.Add(key, car)
+	}
+	return ErrNotFound
 }
 func (rh redisHandler) List() (map[string]Car, error){
 	m := make(map[string]Car)
