@@ -65,7 +65,7 @@ func (rh redisHandler) Get(key string) (Car, error){
 	val, err := rh.client.Get(context.Background(),key).Result()
 	if err != nil {
 		fmt.Println("Failed to GET", err)
-		return c,err
+		return c,ErrNotFound
 	}
 	
 	err = json.Unmarshal([]byte(val), &c)
