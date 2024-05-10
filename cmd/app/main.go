@@ -87,6 +87,17 @@ func (h *CarsHandler) CreateCar(w http.ResponseWriter, r *http.Request){
 		return
 	}
 
+	if car.Model == "" {
+        BadRequestHandler(w,r)
+		return
+    }
+
+    if car.Year < 1000 || car.Year > 9999 {
+        BadRequestHandler(w,r)
+		return
+    }
+
+
 	ID := car.Model+"-"+fmt.Sprint(car.Year)
 	fmt.Printf("ID: %v\n",ID)
 	resourceID := slug.Make(ID)
@@ -188,6 +199,11 @@ func InternalServerErrorHandler(w http.ResponseWriter, r *http.Request){
 	w.WriteHeader(http.StatusInternalServerError)
 	w.Write([]byte("500 Internal Server Error"))
 }
+func BadRequestHandler(w http.ResponseWriter, r *http.Request){
+	w.WriteHeader(http.StatusBadRequest)
+	w.Write([]byte("400 Bad Request"))
+}
+
 
 func NotFoundHandler(w http.ResponseWriter, r *http.Request){
 	w.WriteHeader(http.StatusNotFound)
