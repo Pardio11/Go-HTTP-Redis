@@ -8,6 +8,7 @@ import (
 	"os"
 
 	"github.com/joho/godotenv"
+	"github.com/rs/cors"
 )
 
 
@@ -25,7 +26,11 @@ func main() {
 	mux.Handle("/cars/", carsHandler)
 	godotenv.Load()
 	go_port := os.Getenv("GO_PORT")
-	http.ListenAndServe(go_port, mux)
+	c := cors.New(cors.Options{
+		AllowedOrigins: []string{"http://localhost:3000/"},
+		AllowedMethods:   []string{http.MethodGet, http.MethodPost, http.MethodPut, http.MethodDelete},
+	})
+	http.ListenAndServe(go_port, c.Handler(mux))
 }
 
 
