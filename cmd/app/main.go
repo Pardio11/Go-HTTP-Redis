@@ -5,6 +5,9 @@ import (
 	"http/standarlibary/models"
 	"log"
 	"net/http"
+	"os"
+
+	"github.com/joho/godotenv"
 )
 
 
@@ -20,7 +23,9 @@ func main() {
 	mux.Handle("/", &handlers.HomeHandler{})
 	mux.Handle("/cars", carsHandler)
 	mux.Handle("/cars/", carsHandler)
-	http.ListenAndServe(":8080", mux)
+	godotenv.Load()
+	go_port := os.Getenv("GO_PORT")
+	http.ListenAndServe(go_port, mux)
 }
 
 
