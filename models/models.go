@@ -5,7 +5,9 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"os"
 
+	"github.com/joho/godotenv"
 	"github.com/redis/go-redis/v9"
 )
 
@@ -32,9 +34,12 @@ type redisHandler struct{
 }
 
 func NewRedisHandler() *redisHandler{
+	godotenv.Load()
+	redisAddress := os.Getenv("REDIS_ADDRESS")
+	redisPassword := os.Getenv("REDIS_PASSWORD")
 	client := redis.NewClient(&redis.Options{
-		Addr: "localhost:6379",
-		Password: "",
+		Addr: redisAddress,
+		Password: redisPassword,
 		DB:0,
 	})
 	rh := redisHandler{client}

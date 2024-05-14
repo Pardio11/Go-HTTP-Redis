@@ -14,6 +14,7 @@ require (
 	github.com/dgryski/go-rendezvous v0.0.0-20200823014737-9f7001d12a5f // indirect
 	github.com/google/go-cmp v0.5.9 // indirect
 	github.com/gosimple/unidecode v1.0.1 // indirect
+	github.com/joho/godotenv v1.5.1 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/stretchr/testify v1.9.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
