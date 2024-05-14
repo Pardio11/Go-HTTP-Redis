@@ -29,6 +29,7 @@ func main() {
 	c := cors.New(cors.Options{
 		AllowedOrigins: []string{"http://localhost:3000/"},
 		AllowedMethods:   []string{http.MethodGet, http.MethodPost, http.MethodPut, http.MethodDelete},
+		AllowedHeaders: []string{"X-Requested-With", "Content-Type", "Authorization"},
 	})
 	http.ListenAndServe(go_port, c.Handler(mux))
 }
