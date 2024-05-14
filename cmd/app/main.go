@@ -27,7 +27,7 @@ func main() {
 	godotenv.Load()
 	go_port := os.Getenv("GO_PORT")
 	c := cors.New(cors.Options{
-		AllowedOrigins: []string{"http://localhost:3000/"},
+		AllowedOrigins: []string{"*"},
 		AllowedMethods:   []string{http.MethodGet, http.MethodPost, http.MethodPut, http.MethodDelete},
 		AllowedHeaders: []string{"X-Requested-With", "Content-Type", "Authorization"},
 	})
