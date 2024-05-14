@@ -1,0 +1,11 @@
+{
+	"brand": "Ford",
+	"model": "F150",
+	"year": 1999,
+	"motor": {
+		"size": 2.8,
+		"horsepower": 599,
+		"torque": 84.5,
+		"max_rpm": 10000
+	}
+}
