@@ -2,7 +2,7 @@
 
 A simple CRUD HTTP API built with Go's standard library `net/http` and using Redis as the database to store car information.
 
-[Try Out]( https://httpgo-frontend-pardio11-05dffc836697fef0ca18d8bd0d152f4735cda5.gitlab.io/) 
+[Try Out](https://httpgo-frontend-web-ii2500234-cfb37378fdf9616ae62e747664f3d3143.gitlab.io/) 
 
 [Front End](https://github.com/Pardio11/HTTPGO-Frontend/tree/main) 
 # Endpoints
